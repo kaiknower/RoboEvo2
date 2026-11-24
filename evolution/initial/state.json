@@ -1,0 +1,230 @@
+{
+  "schema": "roboevo2.initial_harness.v1",
+  "round": 0,
+  "skills": {
+    "inspect": {
+      "revision": 0,
+      "arguments": {},
+      "use_when": "A new observation is needed to choose a target or check visible progress.",
+      "dependencies": [
+        "observe"
+      ],
+      "scope": "LIBERO public two-finger gripper interface",
+      "completion": "Return control with a fresh public observation, or stop on external native termination.",
+      "procedure": [
+        {
+          "op": "observe"
+        }
+      ]
+    },
+    "grasp_observed_target": {
+      "revision": 0,
+      "arguments": {
+        "camera": {
+          "type": "camera"
+        },
+        "pixel": {
+          "type": "pixel"
+        },
+        "contact_offset": {
+          "type": "offset_m",
+          "default": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "use_when": "The target is visible and the open fingers have a clear approach.",
+      "dependencies": [
+        "pixel_target",
+        "gripper",
+        "move_delta",
+        "observe"
+      ],
+      "scope": "LIBERO public two-finger gripper interface",
+      "completion": "Return control with a fresh public observation, or stop on external native termination.",
+      "procedure": [
+        {
+          "op": "pixel_target",
+          "camera": "$camera",
+          "pixel": "$pixel",
+          "offset": "$contact_offset",
+          "steps": 40,
+          "gripper": -1
+        },
+        {
+          "op": "gripper",
+          "value": 1,
+          "steps": 12
+        },
+        {
+          "op": "move_delta",
+          "delta": [
+            0,
+            0,
+            0.06
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "steps": 20,
+          "gripper": 1
+        },
+        {
+          "op": "observe"
+        }
+      ]
+    },
+    "place_held_object": {
+      "revision": 0,
+      "arguments": {
+        "camera": {
+          "type": "camera"
+        },
+        "pixel": {
+          "type": "pixel"
+        },
+        "offset": {
+          "type": "offset_m",
+          "default": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "use_when": "Current visual evidence supports retention and identifies a clear visible support.",
+      "dependencies": [
+        "pixel_target",
+        "gripper",
+        "move_delta",
+        "observe"
+      ],
+      "scope": "LIBERO public two-finger gripper interface",
+      "completion": "Return control with a fresh public observation, or stop on external native termination.",
+      "procedure": [
+        {
+          "op": "pixel_target",
+          "camera": "$camera",
+          "pixel": "$pixel",
+          "offset": "$offset",
+          "steps": 40,
+          "gripper": 1
+        },
+        {
+          "op": "gripper",
+          "value": -1,
+          "steps": 12
+        },
+        {
+          "op": "move_delta",
+          "delta": [
+            0,
+            0,
+            0.06
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "steps": 20,
+          "gripper": -1
+        },
+        {
+          "op": "observe"
+        }
+      ]
+    },
+    "relative_clearance": {
+      "revision": 0,
+      "arguments": {
+        "delta": {
+          "type": "offset_m"
+        },
+        "rotation": {
+          "type": "rotation_rad",
+          "default": [
+            0,
+            0,
+            0
+          ]
+        },
+        "steps": {
+          "type": "steps",
+          "default": 20
+        },
+        "gripper": {
+          "type": "gripper"
+        }
+      },
+      "use_when": "The current view shows a clear relative motion from the present end-effector position.",
+      "dependencies": [
+        "move_delta",
+        "observe"
+      ],
+      "scope": "LIBERO public two-finger gripper interface",
+      "completion": "Return control with a fresh public observation, or stop on external native termination.",
+      "procedure": [
+        {
+          "op": "move_delta",
+          "delta": "$delta",
+          "rotation": "$rotation",
+          "steps": "$steps",
+          "gripper": "$gripper"
+        },
+        {
+          "op": "observe"
+        }
+      ]
+    },
+    "policy_continuation": {
+      "revision": 0,
+      "arguments": {
+        "prompt": {
+          "type": "instruction"
+        },
+        "steps": {
+          "type": "steps",
+          "default": 5
+        }
+      },
+      "use_when": "Code has staged the robot at a visible target and local contact can be assigned to the current policy.",
+      "dependencies": [
+        "vla_act",
+        "observe"
+      ],
+      "scope": "LIBERO public two-finger gripper interface",
+      "completion": "Return control with a fresh public observation, or stop on external native termination.",
+      "procedure": [
+        {
+          "op": "vla_act",
+          "prompt": "$prompt",
+          "steps": "$steps"
+        },
+        {
+          "op": "observe"
+        }
+      ]
+    }
+  },
+  "memory": {
+    "working": {},
+    "episodic": {
+      "attempts": [],
+      "experiences": []
+    }
+  },
+  "routing": {
+    "routes": {
+      "code": "Select and execute public code skills from the current views.",
+      "code_icl": "Use demonstration frames, robot state and actions as context for code. Ground each target anew in the live view.",
+      "code_policy": "Stage the target with public code, call the policy with a short instruction for local contact, and inspect the resulting view."
+    },
+    "observation": "Camera RGB-D and calibration, robot proprioception, instruction and public motion receipts.",
+    "verification": "The external verifier stops on native success."
+  }
+}

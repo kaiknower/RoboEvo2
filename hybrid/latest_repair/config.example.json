@@ -1,0 +1,92 @@
+{
+  "protocol": "libero_pro_public_harness_v1",
+  "mode": "targeted_native_failure_repair",
+  "runtime_python": "/absolute/path/to/libero-pro-env/bin/python",
+  "output_root": "/absolute/path/to/output",
+  "gpu_ids": [
+    0
+  ],
+  "baseline_path": "/absolute/path/to/sft-v8-export",
+  "ppo_root": "/absolute/path/to/conditional-ppo-exports",
+  "init_ids": [
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+  ],
+  "task_ids": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "seed": 42,
+  "cameras": [
+    "agentview",
+    "robot0_eye_in_hand",
+    "sideview"
+  ],
+  "policy_caps": {
+    "spatial": 220,
+    "object": 280,
+    "goal": 300,
+    "long": 520
+  },
+  "recovery_steps": 400,
+  "repair_rounds": 3,
+  "case_wall_seconds": 1800,
+  "coding_max_concurrent": 32,
+  "save_video": false,
+  "video_fps": 20,
+  "checkpoint_groups": [
+    "sft_v8",
+    "ppo"
+  ],
+  "coding_agent": {
+    "enabled": true,
+    "model": "your-model-name",
+    "timeout_seconds": 600,
+    "admission_root": "/absolute/path/to/output/coding_admission",
+    "max_inflight": 32,
+    "provider_max_inflight": 32,
+    "admission_wait_timeout_seconds": 7200,
+    "public_visual_proposals": {
+      "enabled": false
+    },
+    "depth_preview_mapping": "log"
+  },
+  "idle_service_pids": [],
+  "minimum_free_memory_mib": 24000,
+  "adaptive_capacity": {
+    "worker_peak_memory_mib": 8704,
+    "startup_host_memory_mib": 22528,
+    "steady_host_memory_mib": 6144,
+    "max_concurrent_starts": 8,
+    "poll_seconds": 2
+  },
+  "sensor_time_calibration": true,
+  "policy_tail_after_harness": false,
+  "harness_version": "latest_repair",
+  "reference_output": "/absolute/path/to/read-only-baseline",
+  "prefix_mode": "replay_saved_policy_actions",
+  "prefix_rgb_max_abs_error": 1,
+  "prefix_rgb_changed_fraction_limit": 0.0001,
+  "prefix_sensor_confirmed_wrist_roundoff": true,
+  "finish_policy_continuation_steps": 80,
+  "public_relative_orientation_feedback": true,
+  "target_gpu_overrides": {},
+  "recovery_extra_view": true,
+  "public_support_surface_guard": true
+}

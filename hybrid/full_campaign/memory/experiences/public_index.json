@@ -1,0 +1,135 @@
+{
+  "schema": "libero.public_experiences.v2",
+  "retrieval_inputs": [
+    "natural-language instruction keywords",
+    "availability of current configured RGB-D observations",
+    "availability of public robot proprioception",
+    "allowlisted operation and status values from prior public execution",
+    "allowlisted bounded-recipe replan reason codes from prior public execution"
+  ],
+  "experiences": [
+    {
+      "id": "observe_before_motion",
+      "title": "Observe before choosing a geometric action",
+      "keywords": ["observe", "inspect", "look", "check", "unclear", "stuck", "观察", "检查", "看清"],
+      "intents": ["inspect", "clearance"],
+      "intent_tokens": {
+        "inspect": ["observe", "inspect", "look", "check", "unclear", "stuck", "观察", "检查"],
+        "clearance": ["blocked", "obstacle", "avoid", "collision", "障碍", "挡住"]
+      },
+      "requires": [],
+      "when_public": "Use when the visible target, support, approach, or recent motion is ambiguous, or a pixel-based primitive was rejected.",
+      "action_template": "Refresh the current configured views and robot proprioception. Choose a target only from the fresh observation, then observe again after step-advancing movement.",
+      "recipe_ids": ["inspect"],
+      "limits": [
+        "A pixel belongs to its current frame; choose a fresh pixel after movement.",
+        "Use visible clearance and public robot feedback only."
+      ],
+      "history_trigger": "stale_pixel_rejected"
+    },
+    {
+      "id": "fresh_depth_grasp",
+      "title": "Grasp a currently visible target",
+      "keywords": ["grasp", "grab", "pick", "pick up", "lift", "take", "拿起", "抓取", "夹取"],
+      "intents": ["grasp"],
+      "intent_tokens": {
+        "grasp": ["grasp", "grab", "pick", "lift", "take", "拿起", "抓取", "夹取"]
+      },
+      "requires": ["rgbd", "proprio"],
+      "when_public": "The target grasp surface is visible, the approach is clear in the current RGB-D view, and public gripper feedback indicates it is ready to close.",
+      "action_template": "Use the approved bound_grasp recipe with a freshly selected depth-backed pixel. Close deliberately, retreat relatively, and inspect whether the object visibly moved with the gripper.",
+      "recipe_ids": ["bound_grasp"],
+      "limits": [
+        "A close command or closed fingers alone do not establish that an object is retained.",
+        "Do not reuse a pixel after any movement or infer clearance from hidden geometry."
+      ]
+    },
+    {
+      "id": "visible_retention_gate_before_place",
+      "title": "Verify visible retention before any placement",
+      "keywords": ["place", "put", "set", "insert", "release", "support", "放置", "放入", "摆放"],
+      "intents": ["place"],
+      "intent_tokens": {
+        "place": ["place", "put", "set", "insert", "release", "放置", "放入", "摆放"]
+      },
+      "requires": ["rgbd", "proprio"],
+      "when_public": "A place, put, set, insert, or release instruction is being handled, and the current view does not clearly show the object retained by the gripper.",
+      "action_template": "Before placing, inspect the current RGB-D views and robot proprioception. If the object is not visibly retained after a relative lift, reobserve and use bound_grasp with a fresh target; proceed to bound_place only when the object is visibly retained.",
+      "recipe_ids": ["inspect", "bound_grasp", "bound_place"],
+      "limits": [
+        "A close command or closed gripper alone is not evidence that an object is held.",
+        "Do not release over a support while retention is unclear; do not reuse an old pixel."
+      ]
+    },
+    {
+      "id": "place_on_visible_support",
+      "title": "Place onto a visible support",
+      "keywords": ["place", "put", "set", "insert", "release", "support", "surface", "放置", "放入", "摆放"],
+      "intents": ["place"],
+      "intent_tokens": {
+        "place": ["place", "put", "set", "insert", "release", "放置", "放入", "摆放"]
+      },
+      "requires": ["rgbd", "proprio"],
+      "when_public": "The object is visibly retained after a relative lift and the intended support or receptacle is visible in the current RGB-D view.",
+      "action_template": "Use the approved bound_place recipe with a fresh depth-backed pixel on the visible support. Release, retreat relatively, and inspect the resulting placement.",
+      "recipe_ids": ["bound_place"],
+      "limits": [
+        "Do not infer that an object is held from gripper closure alone.",
+        "Choose a new support pixel after movement; do not use remembered coordinates."
+      ]
+    },
+    {
+      "id": "visible_relative_clearance",
+      "title": "Make a small visible-clearance adjustment",
+      "keywords": ["blocked", "obstacle", "avoid", "clearance", "collision", "approach", "path", "障碍", "挡住", "避开"],
+      "intents": ["clearance"],
+      "intent_tokens": {
+        "clearance": ["blocked", "obstacle", "avoid", "clearance", "collision", "障碍", "挡住", "避开"]
+      },
+      "requires": ["rgbd", "proprio"],
+      "when_public": "A visible obstruction or unclear route makes a direct approach uncertain, or a bounded recipe reports that its requested waypoint was not reached or public position feedback was unavailable.",
+      "action_template": "Treat a bounded-recipe replan reason only as evidence that the requested point was not reached or public position feedback was unavailable. Reobserve current RGB-D views and robot proprioception and check the visible path, goal, and pose. If public position error is available and decreases during approach, and the fresh RGB-D view shows a clear route, select a new target from that observation and, when the recipe supports it, request a longer approach_steps value up to 80 (default 40). If error does not decrease or feedback is unavailable, inspect the visible path and pose before moving; do not increase approach_steps as the first response.",
+      "recipe_ids": ["relative_clearance"],
+      "limits": [
+        "A waypoint replan reason does not establish collision, contact, or object retention.",
+        "Only use a longer approach after visible progress and a currently clear RGB-D route; never exceed 80 approach_steps.",
+        "Do not derive obstacle geometry or motion direction from hidden state.",
+        "Reobserve before another pixel-based action."
+      ]
+    },
+    {
+      "id": "maintain_visible_push_contact",
+      "title": "Maintain visible contact during a push",
+      "keywords": ["push", "slide", "nudge", "press", "move", "推", "滑动", "推动"],
+      "intents": ["push"],
+      "intent_tokens": {
+        "push": ["push", "slide", "nudge", "press", "推", "滑动", "推动"]
+      },
+      "requires": ["rgbd", "proprio"],
+      "when_public": "A visible object must be pushed or slid and contact can be checked from the configured views.",
+      "action_template": "Use a short bounded relative stroke that keeps the visible contact, then inspect object and robot displacement before continuing.",
+      "recipe_ids": ["relative_clearance"],
+      "limits": [
+        "Do not assume contact force or object motion from the command alone.",
+        "Replan from fresh RGB-D and proprioception if contact or progress is unclear."
+      ]
+    },
+    {
+      "id": "bounded_policy_continuation",
+      "title": "Continue visible policy progress in a bounded chunk",
+      "keywords": ["continue", "continuation", "progress", "next step", "sequence", "继续", "下一步"],
+      "intents": ["continue"],
+      "intent_tokens": {
+        "continue": ["continue", "continuation", "progress", "next step", "sequence", "继续", "下一步"]
+      },
+      "requires": ["rgbd", "proprio"],
+      "when_public": "The current policy is making visible progress and the remaining action budget supports a short continuation.",
+      "action_template": "Use a bounded policy_continuation, then inspect the current RGB-D views and robot proprioception before the next phase.",
+      "recipe_ids": ["policy_continuation"],
+      "limits": [
+        "Do not continue repeating an action when public observations show no progress.",
+        "Keep each continuation within the remaining action budget."
+      ]
+    }
+  ]
+}

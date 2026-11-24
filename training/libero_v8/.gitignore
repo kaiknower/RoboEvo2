@@ -1,0 +1,5 @@
+.train.lock
+checkpoints/
+generated/
+metrics-*.jsonl
+resolved_config.json

@@ -1,0 +1,13 @@
+{
+  "schema": "libero.public_general_lessons.v1",
+  "frozen_during_evaluation": true,
+  "source": "General LIBERO manipulation lessons, stated in terms of the current RGB-D views and robot proprioception.",
+  "lessons": [
+    {"id": "decisive_close", "trigger": "Images show the fingers aligned around the intended grasp surface.", "strategy": "Use one deliberate close and inspect after lifting. A closed jaw alone does not establish retention."},
+    {"id": "clear_approach", "trigger": "Visible objects obstruct a direct approach.", "strategy": "Use a visible clear approach, lift relatively before translating when justified by the images, and inspect ambiguous clearance."},
+    {"id": "seat_grasp", "trigger": "The visible grasp barely overlaps the object edge.", "strategy": "Adjust a small relative offset from the current depth surface while keeping visible supporting surfaces clear."},
+    {"id": "continuous_contact", "trigger": "Images show interrupted pushing with little object movement.", "strategy": "Maintain the intended visible contact during a bounded stroke and inspect progress. Hidden contact forces are unavailable."},
+    {"id": "bounded_motion", "trigger": "A move produces little measured robot displacement or an occluded view.", "strategy": "Observe from configured cameras, use small relative adjustments, and replan. Remove only visibly idle pauses; retain needed contact and settling."},
+    {"id": "budget", "trigger": "Remaining action budget is limited.", "strategy": "Prefer short motion plans and reuse approved recipes. Camera and model waiting time does not spend simulation steps."}
+  ]
+}

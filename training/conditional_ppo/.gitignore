@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.env
+.env.*
+weights/
+runs/
+outputs/
+runtime/
+*.safetensors
+*.pt
+*.pth
+*.tar*
+*.part-*
+.cache/
+/vendor/

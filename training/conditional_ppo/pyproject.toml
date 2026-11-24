@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "libero-pro"
+version = "0.1.0"
+description = "Eight independent LIBERO-PRO Flow-SDE PPO policies initialized from pi05 v8"
+requires-python = ">=3.11"
+dependencies = ["PyYAML>=6", "huggingface-hub>=0.34,<1.0", "hydra-core>=1.3,<1.4"]
+
+[project.scripts]
+libero-pro = "libero_pro.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

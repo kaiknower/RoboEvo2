@@ -1,0 +1,22 @@
+{
+  "schema": "libero.public_skills.v2",
+  "frozen_during_evaluation": true,
+  "source": "Parameterized LIBERO motion recipes; geometry comes only from current public pixels and proprioception.",
+  "operations": {
+    "observe": "Read current configured RGB-D cameras and robot proprioception; consumes no action.",
+    "run_policy": "Execute steps from the configured policy, each checked by the private evaluator.",
+    "move_delta": "Relative delta [x,y,z] meters, relative rotation [rx,ry,rz] radians, steps and gripper. No absolute target.",
+    "gripper": "value -1 open / +1 close, held for steps.",
+    "pixel_target": "camera, integer pixel [x,y], world-aligned offset meters, steps and gripper. Current depth plus camera-to-world calibration supplies the target. Must be the first step-advancing operation.",
+    "move_bound_target": "target is the name of a visual_targets entry bound from this plan's current RGB-D before any action. offset is world-aligned meters from that point; optional rotation is bounded relative radians. steps <=80 and gripper are required. Pure translations may stop after three successive proprioceptive errors <=3mm; nonzero rotations always retain their full segment. Feedback initial_position_error and position_error_reduction (initial minus final, possibly negative) use public end-effector positions only. The anchor expires when this plan ends and does not track moved objects."
+  },
+  "recipes": [
+    {"id": "bound_grasp", "arguments": ["camera", "pixel", "contact_offset"], "optional_arguments": ["approach_offset", "rotation", "approach_steps"], "method": "Bind one point from the current RGB-D, then open for 12 actions, approach with open fingers for approach_steps actions (integer 1..80, default 40), descend to contact_offset for up to 40, close for 12, lift 0.06m for 20, and inspect. Translation may stop early on convergence. Default approach_offset is [0,0,0.12] from the bound point. Optional rotation is applied only during approach. Default maximum 124 actions; with approach_steps=80 the maximum is 164, fully charged against remaining_steps. Increase approach steps only with measured progress and a visibly clear route using a fresh target; without progress inspect path/posture first. Close alone does not prove retention."},
+    {"id": "bound_place", "arguments": ["camera", "pixel", "offset"], "optional_arguments": ["approach_offset", "rotation", "approach_steps"], "method": "Bind a visible support point from current RGB-D, approach while preserving grip for approach_steps actions (integer 1..80, default 40), lower to offset for up to 40, release for 12, retreat upward 0.06m for 20, and inspect. Translation may stop early on convergence. Default approach_offset is [0,0,0.12] from the bound point; it is not added to offset. Default maximum 112 actions; with approach_steps=80 the maximum is 152, fully charged against remaining_steps. Increase approach steps only with measured progress and a visibly clear route using a fresh target; without progress inspect path/posture first. Use only when current images support carrying an object; check the result from fresh views next round."},
+    {"id": "inspect", "arguments": [], "method": "Observe current cameras before selecting any geometric action."},
+    {"id": "grasp_observed_target", "arguments": ["camera", "pixel", "contact_offset"], "method": "Move to one visually selected depth point with a contact offset, close once, lift by a relative 0.06 m, inspect. Use only when the gripper is already visibly open and the direct approach is clear. Do not reuse the pixel after moving."},
+    {"id": "place_held_object", "arguments": ["camera", "pixel", "offset"], "method": "Move toward a visually selected support with an offset appropriate to the observed held object, open, retreat upward by relative 0.06 m, inspect. Do not assume an object is held from a closed gripper alone."},
+    {"id": "relative_clearance", "arguments": ["delta", "rotation", "steps", "gripper"], "method": "Bounded relative motion to a visibly clear location followed by inspection. Never derive direction from hidden obstacle geometry."},
+    {"id": "policy_continuation", "arguments": ["steps"], "method": "Run a bounded continuation of the configured policy, then inspect."}
+  ]
+}

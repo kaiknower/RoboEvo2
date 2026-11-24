@@ -1,0 +1,685 @@
+{
+  "schema": "libero.public_experiences.v2",
+  "retrieval_inputs": [
+    "natural-language instruction keywords",
+    "availability of current configured RGB-D observations",
+    "availability of public robot proprioception",
+    "allowlisted operation and status values from prior public execution",
+    "allowlisted bounded-recipe replan reason codes from prior public execution"
+  ],
+  "experiences": [
+    {
+      "id": "observe_before_motion",
+      "title": "Observe before choosing a geometric action",
+      "keywords": [
+        "observe",
+        "inspect",
+        "look",
+        "check",
+        "unclear",
+        "stuck",
+        "观察",
+        "检查",
+        "看清"
+      ],
+      "intents": [
+        "inspect",
+        "clearance"
+      ],
+      "intent_tokens": {
+        "inspect": [
+          "observe",
+          "inspect",
+          "look",
+          "check",
+          "unclear",
+          "stuck",
+          "观察",
+          "检查"
+        ],
+        "clearance": [
+          "blocked",
+          "obstacle",
+          "avoid",
+          "collision",
+          "障碍",
+          "挡住"
+        ]
+      },
+      "requires": [],
+      "when_public": "Use when the visible target, support, approach, or recent motion is ambiguous, or a pixel-based primitive was rejected.",
+      "action_template": "Refresh the current configured views and robot proprioception. Choose a target only from the fresh observation, then observe again after step-advancing movement.",
+      "recipe_ids": [
+        "inspect"
+      ],
+      "limits": [
+        "A pixel belongs to its current frame; choose a fresh pixel after movement.",
+        "Use visible clearance and public robot feedback only."
+      ],
+      "history_trigger": "stale_pixel_rejected"
+    },
+    {
+      "id": "fresh_depth_grasp",
+      "title": "Grasp a currently visible target",
+      "keywords": [
+        "grasp",
+        "grab",
+        "pick",
+        "pick up",
+        "lift",
+        "take",
+        "拿起",
+        "抓取",
+        "夹取"
+      ],
+      "intents": [
+        "grasp"
+      ],
+      "intent_tokens": {
+        "grasp": [
+          "grasp",
+          "grab",
+          "pick",
+          "lift",
+          "take",
+          "拿起",
+          "抓取",
+          "夹取"
+        ]
+      },
+      "requires": [
+        "rgbd",
+        "proprio"
+      ],
+      "when_public": "The target grasp surface is visible, the approach is clear in the current RGB-D view, and public gripper feedback indicates it is ready to close.",
+      "action_template": "Use the approved bound_grasp recipe with a freshly selected depth-backed pixel. Close deliberately, retreat relatively, and inspect whether the object visibly moved with the gripper.",
+      "recipe_ids": [
+        "bound_grasp"
+      ],
+      "limits": [
+        "A close command or closed fingers alone do not establish that an object is retained.",
+        "Do not reuse a pixel after any movement or infer clearance from hidden geometry."
+      ]
+    },
+    {
+      "id": "visible_retention_gate_before_place",
+      "title": "Verify visible retention before any placement",
+      "keywords": [
+        "place",
+        "put",
+        "set",
+        "insert",
+        "release",
+        "support",
+        "放置",
+        "放入",
+        "摆放"
+      ],
+      "intents": [
+        "place"
+      ],
+      "intent_tokens": {
+        "place": [
+          "place",
+          "put",
+          "set",
+          "insert",
+          "release",
+          "放置",
+          "放入",
+          "摆放"
+        ]
+      },
+      "requires": [
+        "rgbd",
+        "proprio"
+      ],
+      "when_public": "A place, put, set, insert, or release instruction is being handled, and the current view does not clearly show the object retained by the gripper.",
+      "action_template": "Before placing, inspect the current RGB-D views and robot proprioception. If retention is not visually supported after a relative lift, re-localize and restage using a fresh public target. A pure-code bound_grasp or one staged vla_act contact attempt may be chosen; after vla_act, use the next remaining revision to inspect fresh views before transport or release. Proceed to placement only when current images support retention: use bound_place for an open-top support, or bound_cavity_place only for a currently visible side opening and interior route. Closed fingers alone do not establish retention. Apply this same evidence gate to the wording of vla_act: do not describe an object as held or request carrying-dependent placement when retention is only assumed. For a visibly separate reachable object, choose pick/grasp first, then reassess in the next original revision; with occluded evidence, inspect or restage rather than issue a blind grasp. This adds no planning call or action allowance.",
+      "recipe_ids": [
+        "inspect",
+        "bound_grasp",
+        "vla_act",
+        "bound_place",
+        "bound_cavity_place"
+      ],
+      "limits": [
+        "A close command or closed gripper alone is not evidence that an object is held.",
+        "Do not release over a support while retention is unclear; do not reuse an old pixel."
+      ]
+    },
+    {
+      "id": "observed_side_entry_placement",
+      "title": "Place through a currently visible side entrance",
+      "keywords": [
+        "microwave",
+        "cabinet",
+        "oven",
+        "cavity",
+        "side opening",
+        "侧面开口"
+      ],
+      "intents": [
+        "cavity_placement"
+      ],
+      "intent_tokens": {
+        "cavity_placement": [
+          "put microwave",
+          "place microwave",
+          "insert microwave",
+          "put cabinet",
+          "place cabinet",
+          "insert cabinet",
+          "put oven",
+          "place oven",
+          "insert cavity",
+          "放入柜子",
+          "放入微波炉"
+        ]
+      },
+      "requires": [
+        "alternate_rgbd",
+        "proprio"
+      ],
+      "when_public": "Current configured views show an open side entrance and a visible interior support, and the object appears retained. A task noun alone does not establish an open entrance or retention.",
+      "action_template": "For placement into a roofed cavity, choose fresh stationary entrance and interior support pixels and local offsets for an almost level exterior-to-interior carry route. Use bound_cavity_place to align outside, insert laterally, release, and return along the same entrance before observing. If either required surface or the carried object cannot be resolved, inspect the other configured view and reassess; do not infer hidden geometry. This recipe is for insertion, not extraction, opening, or closing.",
+      "recipe_ids": [
+        "bound_cavity_place",
+        "inspect"
+      ],
+      "limits": [
+        "No stored instance coordinates, object poses, holding flags or hidden joint state.",
+        "The two public anchors and same-height check do not prove free space, object retention or native success.",
+        "Default 132 actions; phase_steps align/insert/release/exit each 1..80 and the complete plan must fit remaining_steps.",
+        "Preserve public waypoint/orientation guards; do not release when the requested waypoint is not reached."
+      ]
+    },
+    {
+      "id": "place_on_visible_support",
+      "title": "Place onto a visible support",
+      "keywords": [
+        "place",
+        "put",
+        "set",
+        "insert",
+        "release",
+        "support",
+        "surface",
+        "放置",
+        "放入",
+        "摆放"
+      ],
+      "intents": [
+        "place"
+      ],
+      "intent_tokens": {
+        "place": [
+          "place",
+          "put",
+          "set",
+          "insert",
+          "release",
+          "放置",
+          "放入",
+          "摆放"
+        ]
+      },
+      "requires": [
+        "rgbd",
+        "proprio"
+      ],
+      "when_public": "The object is visibly retained after a relative lift and the intended open-top or unroofed support is visible in current RGB-D; a vertical approach and retreat have visibly clear space.",
+      "action_template": "For a visibly retained object, use analytic free-space transport and bound_place with a fresh depth-backed point on the intended visible support and current instruction relation. Release, retreat relatively, and inspect the resulting placement. Do not delegate distant target selection or long transport to a local VLA contact attempt, and do not replace the instructed relation with the largest predicted free-space margin.",
+      "recipe_ids": [
+        "bound_place"
+      ],
+      "limits": [
+        "Do not infer that an object is held from gripper closure alone.",
+        "Choose a new support pixel after movement; do not use remembered coordinates.",
+        "For a roofed cavity with a visible side entrance and interior support, inspect the bound_cavity_place recipe instead; do not descend through a roof or lift inside it."
+      ]
+    },
+    {
+      "id": "visible_relative_clearance",
+      "title": "Make a small visible-clearance adjustment",
+      "keywords": [
+        "blocked",
+        "obstacle",
+        "avoid",
+        "clearance",
+        "collision",
+        "approach",
+        "path",
+        "障碍",
+        "挡住",
+        "避开"
+      ],
+      "intents": [
+        "clearance"
+      ],
+      "intent_tokens": {
+        "clearance": [
+          "blocked",
+          "obstacle",
+          "avoid",
+          "clearance",
+          "collision",
+          "障碍",
+          "挡住",
+          "避开"
+        ]
+      },
+      "requires": [
+        "rgbd",
+        "proprio"
+      ],
+      "when_public": "A visible obstruction or unclear route makes a direct approach uncertain, or a bounded recipe reports that its requested waypoint was not reached or public position feedback was unavailable.",
+      "action_template": "Treat a bounded-recipe replan reason only as evidence that the requested point was not reached or public position feedback was unavailable. Reobserve current RGB-D views and robot proprioception and check the visible path, goal, and pose. If public position error is available and decreases during approach, and the fresh RGB-D view shows a clear route, select a new target from that observation and request a longer approach phase up to 80 actions (default 40), using arguments.approach_steps ONLY for bound_grasp or bound_place; use arguments.phase_steps.approach for bound_drawer_pull, bound_surface_stroke or bound_transfer, and phase_steps.carry for a transfer support approach. Never mix these argument names or add approach_steps to a phase_steps recipe. If error does not decrease or feedback is unavailable, inspect the visible path and pose before moving; do not increase the approach phase cap as the first response.",
+      "recipe_ids": [
+        "relative_clearance"
+      ],
+      "limits": [
+        "A waypoint replan reason does not establish collision, contact, or object retention.",
+        "Only use a longer approach after visible progress and a currently clear RGB-D route; never exceed 80 actions in the chosen approach phase; use only the selected recipe's supported argument names.",
+        "Do not derive obstacle geometry or motion direction from hidden state.",
+        "Reobserve before another pixel-based action."
+      ]
+    },
+    {
+      "id": "maintain_visible_push_contact",
+      "title": "Maintain visible contact during a push",
+      "keywords": [
+        "push",
+        "slide",
+        "nudge",
+        "press",
+        "move",
+        "推",
+        "滑动",
+        "推动"
+      ],
+      "intents": [
+        "push"
+      ],
+      "intent_tokens": {
+        "push": [
+          "push",
+          "slide",
+          "nudge",
+          "press",
+          "推",
+          "滑动",
+          "推动"
+        ]
+      },
+      "requires": [
+        "rgbd",
+        "proprio"
+      ],
+      "when_public": "A visible object must be pushed or slid and contact can be checked from the configured views.",
+      "action_template": "Use a short bounded relative stroke that keeps the visible contact, then inspect object and robot displacement before continuing.",
+      "recipe_ids": [
+        "relative_clearance"
+      ],
+      "limits": [
+        "Do not assume contact force or object motion from the command alone.",
+        "Replan from fresh RGB-D and proprioception if contact or progress is unclear."
+      ]
+    },
+    {
+      "id": "bounded_policy_continuation",
+      "title": "Stage a bounded local policy contact attempt",
+      "keywords": [
+        "continue",
+        "continuation",
+        "progress",
+        "next step",
+        "sequence",
+        "继续",
+        "下一步"
+      ],
+      "intents": [
+        "continue"
+      ],
+      "intent_tokens": {
+        "continue": [
+          "continue",
+          "continuation",
+          "progress",
+          "next step",
+          "sequence",
+          "继续",
+          "下一步"
+        ]
+      },
+      "requires": [
+        "rgbd",
+        "proprio"
+      ],
+      "when_public": "A contact interaction is requested and current RGB-D/proprioception support a local pre-contact pose, or a previous local policy attempt now needs visual reassessment. The language alone does not establish the current phase.",
+      "action_template": "Use analytic actions for fresh visual grounding, a clear non-contact approach, relative lift and free-space transport. Once current views support the local contact setup, vla_act with a short natural-language subgoal and steps 1..80 is an option for one contact attempt. It must be the final step-advancing operation in this plan; only observe may follow. Recheck fresh RGB-D in the next remaining planning revision before deciding on another contact, transport or release. If a requested waypoint was not reached, re-localize and adjust the visible route or posture first; do not repeat the same path on the assumption that a lift or approach succeeded. Existing pure-code recipes and full-task policy_continuation remain valid options. Choose the local prompt from the currently supported manipulation phase. If the intended object is visibly separate and reachable and retention has not been established from recent views, request pick/grasp rather than place/insert. Do not assert held or holding from closed fingers, a command, proximity or occlusion; recent visible motion with the fingers after a lift, consistent with public end-effector feedback, can support a retention inference but is not a truth label. If the views remain ambiguous, restage or inspect another current view instead of inventing that premise. Pure-code contact remains optional.",
+      "recipe_ids": [
+        "vla_act",
+        "relative_clearance",
+        "policy_continuation",
+        "inspect"
+      ],
+      "limits": [
+        "A completed local attempt, close command or closed fingers do not establish grasp, retention, contact or task completion.",
+        "The local prompt describes the current natural-language subgoal, never task IDs, hidden labels, remembered coordinates or native verdicts.",
+        "Use only the remaining 400-action/3-planning-call budget: vla_act steps are charged normally; observe adds no planning call and the last revision has no further planner.",
+        "This card offers a choice, not a mandatory policy action, retry loop or extra policy tail."
+      ]
+    },
+    {
+      "id": "ordered_multi_object_transfer",
+      "title": "Transfer requested objects one at a time",
+      "keywords": [
+        "both",
+        "each",
+        "all",
+        "multiple objects",
+        "two objects",
+        "every object",
+        "逐个",
+        "每个物体",
+        "两个物体"
+      ],
+      "intents": [
+        "multi_object_transfer"
+      ],
+      "intent_tokens": {
+        "multi_object_transfer": [
+          "both",
+          "each",
+          "all",
+          "multiple objects",
+          "two objects",
+          "every object",
+          "逐个",
+          "每个物体",
+          "两个物体"
+        ]
+      },
+      "requires": [
+        "rgbd",
+        "proprio"
+      ],
+      "when_public": "The natural-language goal asks to move each, both or several visible objects, or contains separate put/place/transfer clauses. This is a sequencing option, not proof of object membership or the current task phase.",
+      "action_template": "Reuse the phase structure for each requested transfer: identify the current source and relation landmark, stage from current RGB-D, attempt contact, visually reassess, transport and release only when supported, then assess the remaining instruction. Rebind every source, support and relation from the current image; never replay an earlier pixel, coordinate or instance number. Use a pure-code bound_transfer when its full budget fits, or analytic staging followed by one local vla_act attempt as the last advancing operation. A subsequent available revision must inspect the contact attempt before transport. Allocate phase caps across the requested transfers; do not assume early convergence refunds an overbudget plan or that observe creates another planner call.",
+      "recipe_ids": [
+        "bound_transfer",
+        "vla_act",
+        "bound_grasp",
+        "bound_place",
+        "inspect"
+      ],
+      "limits": [
+        "The default bound_transfer is 236 actions; two defaults total 472 and exceed a 400-action budget.",
+        "Use phase_steps for one safe bounded transfer only when supported and within remaining_steps.",
+        "Do not infer hidden object membership, destination occupancy, or task completion."
+      ],
+      "history_triggers": [
+        "bound_transfer_completed",
+        "action_budget_limited"
+      ]
+    },
+    {
+      "id": "visible_drawer_handle_pull",
+      "title": "Pull a visible drawer handle while maintaining contact",
+      "keywords": [
+        "open drawer",
+        "drawer handle",
+        "pull drawer",
+        "pull handle",
+        "打开抽屉",
+        "拉开抽屉",
+        "抽屉把手"
+      ],
+      "intents": [
+        "drawer_pull"
+      ],
+      "intent_tokens": {
+        "drawer_pull": [
+          "open drawer",
+          "drawer handle",
+          "pull drawer",
+          "pull handle",
+          "打开抽屉",
+          "拉开抽屉",
+          "抽屉把手"
+        ]
+      },
+      "requires": [
+        "rgbd",
+        "proprio"
+      ],
+      "when_public": "The instruction asks to open or pull a drawer and its handle is visible in current configured views.",
+      "action_template": "Select the handle contact from a fresh configured RGB-D view, approach visibly, and maintain contact through a short bounded pull using bound_drawer_pull. Check current views and robot feedback afterward; do not use a hidden joint axis or simulator handle geometry.",
+      "recipe_ids": [
+        "bound_drawer_pull",
+        "inspect"
+      ],
+      "limits": [
+        "The default bound_drawer_pull is 176 actions; fit phase_steps within remaining_steps when the executor supports it.",
+        "If the handle or approach is not visible, inspect another configured view before selecting a contact.",
+        "A completed pull command does not prove the drawer reached its requested state."
+      ],
+      "history_triggers": [
+        "bound_drawer_pull_completed",
+        "action_budget_limited"
+      ]
+    },
+    {
+      "id": "visible_surface_contact_stroke",
+      "title": "Use a short visible contact stroke on a door or surface",
+      "keywords": [
+        "close door",
+        "push door",
+        "press door",
+        "close drawer",
+        "push surface",
+        "press surface",
+        "关门",
+        "推门",
+        "按压表面"
+      ],
+      "intents": [
+        "surface_contact"
+      ],
+      "intent_tokens": {
+        "surface_contact": [
+          "close door",
+          "push door",
+          "press door",
+          "close drawer",
+          "push surface",
+          "press surface",
+          "关门",
+          "推门",
+          "按压表面"
+        ]
+      },
+      "requires": [
+        "rgbd",
+        "proprio"
+      ],
+      "when_public": "The instruction explicitly requests closing a visible door, drawer, cabinet, microwave or similar surface, including a later closing phase in a compound instruction. Current images must support which phase is appropriate now.",
+      "action_template": "For a compound placement-and-close instruction, assess every requested phase from current public images; do not close over an unresolved placement or obstructed path. Choose a visible contact area and use one short contact-preserving bound_surface_stroke in the direction supported by current images. Inspect visible progress before any next stroke. Do not infer a hinge axis or hidden contact force.",
+      "recipe_ids": [
+        "bound_surface_stroke",
+        "relative_clearance",
+        "inspect"
+      ],
+      "limits": [
+        "The default bound_surface_stroke is 152 actions; keep phase_steps within remaining_steps when supported.",
+        "Do not repeat a stroke without fresh evidence of progress or a changed visible contact.",
+        "A command or public feedback does not establish native success."
+      ],
+      "history_triggers": [
+        "bound_surface_stroke_completed",
+        "action_budget_limited"
+      ]
+    },
+    {
+      "id": "current_image_grasp_axis",
+      "title": "Choose a grasp axis from the current visible object shape",
+      "keywords": [
+        "narrow object",
+        "thin object",
+        "thin handle",
+        "handled object",
+        "grasp handle",
+        "grasp axis",
+        "closing axis",
+        "狭窄物体",
+        "细长物体",
+        "夹持方向"
+      ],
+      "intents": [
+        "shape_aligned_grasp"
+      ],
+      "intent_tokens": {
+        "shape_aligned_grasp": [
+          "narrow object",
+          "thin object",
+          "thin handle",
+          "handled object",
+          "grasp handle",
+          "grasp axis",
+          "closing axis",
+          "狭窄物体",
+          "细长物体",
+          "夹持方向"
+        ]
+      },
+      "requires": [
+        "rgbd",
+        "proprio"
+      ],
+      "when_public": "A narrow or handled object needs a grasp and its visible shape provides a clear grasp direction.",
+      "action_template": "Select a fresh depth-backed contact and choose the gripper closing axis across the object's visible narrow width or handle bar, then use bound_grasp or grasp_observed_target. If the visible shape does not resolve the axis, inspect another configured view before attempting the grasp. Never use object names, historical world coordinates, or simulator yaw to choose orientation.",
+      "recipe_ids": [
+        "bound_grasp",
+        "grasp_observed_target",
+        "inspect"
+      ],
+      "limits": [
+        "Use only the current public RGB-D views; do not infer hidden orientation or holding state.",
+        "A closed gripper alone does not prove retention."
+      ],
+      "history_triggers": [
+        "gripper_close_completed"
+      ]
+    },
+    {
+      "id": "alternate_configured_view_for_occlusion",
+      "title": "Resolve an occluded target with another configured view",
+      "keywords": [
+        "occluded",
+        "occlusion",
+        "obscured",
+        "blocked view",
+        "hidden behind",
+        "not visible",
+        "遮挡",
+        "看不清",
+        "视角被挡"
+      ],
+      "intents": [
+        "occluded_target"
+      ],
+      "intent_tokens": {
+        "occluded_target": [
+          "occluded",
+          "occlusion",
+          "obscured",
+          "blocked view",
+          "hidden behind",
+          "not visible",
+          "遮挡",
+          "看不清",
+          "视角被挡"
+        ]
+      },
+      "requires": [
+        "alternate_rgbd"
+      ],
+      "when_public": "One current configured RGB-D view does not resolve the target or a clear approach, and another configured RGB-D view is available.",
+      "action_template": "Inspect another currently available configured RGB-D view and select targets only from the fresh visible evidence. If the views remain ambiguous, avoid a geometry-dependent move and request a fresh observation; never substitute historical coordinates, sim poses, joint states, or holding labels.",
+      "recipe_ids": [
+        "inspect",
+        "relative_clearance"
+      ],
+      "limits": [
+        "This card is available only when at least two configured cameras have current RGB-D observations.",
+        "An alternate view adds visible evidence; it does not establish native success."
+      ],
+      "history_triggers": [
+        "stale_pixel_rejected"
+      ]
+    },
+    {
+      "id": "commanded_position_not_reached",
+      "title": "Check measured position progress before repeating a motion",
+      "keywords": [],
+      "intents": [],
+      "requires": [
+        "rgbd",
+        "proprio"
+      ],
+      "when_public": "A completed or replanned public position command started at least 0.04 m from its target, remains at least 0.04 m away, and reduced that error by at most 0.002 m.",
+      "action_template": "Command execution ending does not mean the requested end-effector position was reached. Use current RGB-D views and public robot feedback to reassess the local route and posture before the next action. Do not assume a requested upward motion actually raised the gripper or created free space. Do not repeat the same motion on that assumption or merely add duration. Choose a different visibly supported local path or bounded relative orientation when appropriate, or a bounded policy continuation when current public evidence supports it. A local vla_act contact attempt is an option only after current views support a suitable local setup; it is not a remedy for an unlocalized or unreached waypoint. Respect the remaining action and planning budgets.",
+      "recipe_ids": [
+        "relative_clearance",
+        "policy_continuation",
+        "inspect"
+      ],
+      "limits": [
+        "This flag describes commanded robot position progress only; it does not identify the motion intent or establish collision, contact, grasp, retention, or task success.",
+        "A move_delta may be a push, pull, or another action; no clearance intent is inferred.",
+        "Use only current public RGB-D, calibration and robot proprioception; never hidden states, fixed task coordinates or native verdicts.",
+        "No motion guard, automatic retry, extra planning call or action budget is introduced."
+      ]
+    },
+    {
+      "id": "final_revision_action_closure",
+      "title": "Use the final planning revision for a task-directed action",
+      "keywords": [
+        "final revision",
+        "last planning turn",
+        "最后一次规划"
+      ],
+      "intents": [
+        "final_revision"
+      ],
+      "intent_tokens": {
+        "final_revision": [
+          "final revision",
+          "last planning turn",
+          "最后一次规划"
+        ]
+      },
+      "requires": [],
+      "when_public": "Exactly one public planning revision remains. Choose the remaining task phase from the natural-language instruction and current public visual evidence.",
+      "action_template": "Treat this as the final visual-planning call: an observe operation records evidence but will not trigger another planner response. If the requested goal is not visibly complete, use the instruction and current RGB-D/proprioception to choose the remaining phase and emit a short executable program now. For a visible target with a clear grasp approach use bound_grasp; if the object is visibly held, use bound_place on a visible open-top support, or bound_cavity_place for a visible side entrance and interior route; for a requested push or slide, use a short stroke that maintains visible contact; if current images support a local contact setup, one final vla_act attempt of at most 80 actions is optional; full-task policy_continuation also remains available. Neither option provides another planning call afterward. Keep every operation within the known remaining_steps. Do not finish with observe and defer action, add a fixed policy tail or extra plans, or claim native success from visual or robot-state evidence. If public evidence already supports the requested goal, avoid needless motion and report only that evidence.",
+      "recipe_ids": [
+        "vla_act",
+        "bound_grasp",
+        "bound_place",
+        "relative_clearance",
+        "policy_continuation",
+        "inspect",
+        "bound_cavity_place"
+      ],
+      "limits": [
+        "Retrieve only when exactly one planning revision remains.",
+        "Motivated by a public trace ending at observe without a follow-up planner; this is not evidence of improved task success.",
+        "Use natural-language task phase and current public evidence; do not use task IDs, fixed coordinates, or hidden success conditions.",
+        "Observe alone is not a terminal plan when another task-directed action is warranted.",
+        "Respect remaining_steps; no mandatory policy tail or added plan/action budget.",
+        "Visual or robot-state evidence does not establish native success."
+      ]
+    }
+  ]
+}

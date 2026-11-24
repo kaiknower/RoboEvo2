@@ -1,0 +1,89 @@
+{
+  "seed": 42,
+  "workers": 1,
+  "gamma": 1.0,
+  "initial_policy": "/path/to/checkpoints/libero-pi05-pytorch",
+  "demonstrations": [
+    {
+      "id": "d0-bowl-001",
+      "source": "demonstration",
+      "split": "train",
+      "task": "spatial_position/0",
+      "goal": "Pick the akita black bowl between the plate and the ramekin and place it on the plate",
+      "trajectory": "/path/to/demonstrations/bowl-001/trajectory.json"
+    }
+  ],
+  "train": [
+    {
+      "id": "spatial-position-0-train-0",
+      "split": "train",
+      "task": "spatial_position/0",
+      "goal": "Pick the akita black bowl between the plate and the ramekin and place it on the plate",
+      "initial_state": "spatial_position/0/0",
+      "seed": 42,
+      "conditions": "native-calibrated-20hz-v1",
+      "libero": {
+        "condition": "spatial_position",
+        "task_id": 0,
+        "init_id": 0,
+        "task_scale_m": 0.25
+      }
+    }
+  ],
+  "development": [
+    {
+      "id": "spatial-position-0-development-20",
+      "split": "development",
+      "task": "spatial_position/0",
+      "goal": "Pick the akita black bowl between the plate and the ramekin and place it on the plate",
+      "initial_state": "spatial_position/0/20",
+      "seed": 62,
+      "conditions": "native-calibrated-20hz-v1",
+      "libero": {
+        "condition": "spatial_position",
+        "task_id": 0,
+        "init_id": 20,
+        "task_scale_m": 0.25
+      }
+    }
+  ],
+  "commands": {
+    "rollout": [
+      "{python}",
+      "-m",
+      "evolution.libero_runtime"
+    ],
+    "repair": [
+      "{python}",
+      "-m",
+      "evolution.libero_runtime"
+    ],
+    "integrate": [
+      "{python}",
+      "-m",
+      "evolution.integrate"
+    ],
+    "train": [
+      "{python}",
+      "-m",
+      "evolution.policy_update",
+      "--adapter",
+      "evolution.libero_training:build",
+      "--steps",
+      "1",
+      "--batch-size",
+      "1",
+      "--pair-batch-size",
+      "1",
+      "--fisher-samples",
+      "1",
+      "--learning-rate",
+      "0.000005"
+    ],
+    "evaluate": [
+      "{python}",
+      "-m",
+      "evolution.libero_runtime"
+    ]
+  }
+}

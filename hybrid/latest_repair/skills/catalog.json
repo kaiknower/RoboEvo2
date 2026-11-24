@@ -1,0 +1,189 @@
+{
+  "schema": "libero.public_skills.v2",
+  "frozen_during_evaluation": true,
+  "source": "Parameterized LIBERO motion recipes; geometry comes only from current public pixels and proprioception.",
+  "operations": {
+    "observe": "Read current configured RGB-D cameras and robot proprioception; consumes no action.",
+    "run_policy": "Execute steps from the configured policy, each checked by the private evaluator.",
+    "move_delta": "Relative delta [x,y,z] meters, relative rotation [rx,ry,rz] radians, steps and gripper. No absolute target.",
+    "gripper": "value -1 open / +1 close, held for steps.",
+    "pixel_target": "camera, integer pixel [x,y], world-aligned offset meters, steps and gripper. Current depth plus camera-to-world calibration supplies the target. Must be the first step-advancing operation.",
+    "move_bound_target": "target is the name of a visual_targets entry bound from this plan's current RGB-D before any action. offset is world-aligned meters from that point; optional rotation is bounded relative radians. steps <=80 and gripper are required. Pure translations may stop after three successive proprioceptive errors <=3mm; nonzero rotations always retain their full segment. Feedback initial_position_error and position_error_reduction (initial minus final, possibly negative) use public end-effector positions only. The anchor expires when this plan ends and does not track moved objects.",
+    "vla_act": "prompt is one nonempty single-line natural-language local subgoal (1..400 characters); steps is an integer 1..80, charged within remaining recovery actions. Recovery only. Finite analytic staging may precede this action, but vla_act must be the last step-advancing operation; only observe may follow. It runs the same frozen policy from current public observations with the local prompt, then requests reobservation in an existing remaining planning revision. It does not create a revision, reset, success label or extra policy tail. A contact attempt is not proof of holding or completion. Pure-code recipes and original full-task run_policy remain available."
+  },
+  "recipes": [
+    {
+      "id": "bound_grasp",
+      "arguments": [
+        "camera",
+        "pixel",
+        "contact_offset"
+      ],
+      "optional_arguments": [
+        "approach_offset",
+        "rotation",
+        "approach_steps"
+      ],
+      "method": "Bind one point from the current RGB-D, then open for 12 actions, approach with open fingers for approach_steps actions (integer 1..80, default 40), descend to contact_offset for up to 40, close for 12, lift 0.06m for 20, and inspect. Translation may stop early on convergence. Default approach_offset is [0,0,0.12] from the bound point. Optional rotation is applied only during approach. Default maximum 124 actions; with approach_steps=80 the maximum is 164, fully charged against remaining_steps. Increase approach steps only with measured progress and a visibly clear route using a fresh target; without progress inspect path/posture first. Close alone does not prove retention. Set the cap with arguments.approach_steps; this recipe does not accept phase_steps."
+    },
+    {
+      "id": "bound_place",
+      "arguments": [
+        "camera",
+        "pixel",
+        "offset"
+      ],
+      "optional_arguments": [
+        "approach_offset",
+        "rotation",
+        "approach_steps"
+      ],
+      "method": "Bind a visible support point from current RGB-D, approach while preserving grip for approach_steps actions (integer 1..80, default 40), lower to offset for up to 40, release for 12, retreat upward 0.06m for 20, and inspect. Translation may stop early on convergence. Default approach_offset is [0,0,0.12] from the bound point; it is not added to offset. Default maximum 112 actions; with approach_steps=80 the maximum is 152, fully charged against remaining_steps. Increase approach steps only with measured progress and a visibly clear route using a fresh target; without progress inspect path/posture first. Use only when current images support carrying an object; check the result from fresh views next round. Set the cap with arguments.approach_steps; this recipe does not accept phase_steps."
+    },
+    {
+      "id": "bound_cavity_place",
+      "arguments": [
+        "entrance_camera",
+        "entrance_pixel",
+        "interior_camera",
+        "interior_pixel",
+        "entrance_offset",
+        "interior_offset"
+      ],
+      "optional_arguments": [
+        "rotation",
+        "phase_steps"
+      ],
+      "phase_steps_defaults": {
+        "align": 40,
+        "insert": 40,
+        "release": 12,
+        "exit": 40
+      },
+      "method": "Use only when CURRENT multiple public views show an open side entrance, a visible interior support surface, and evidence consistent with carrying an object; closed fingers alone are not retention evidence. For a roofed cavity, do not use the ordinary above-support then vertical-descend/vertical-retreat path. Bind two stationary pixels from THIS RGB-D snapshot: entrance on the visible opening rim/exterior surface, interior on the visible support floor. World-aligned entrance_offset and interior_offset (each component within+/-0.15m) specify the desired EEF carry-height route from those surfaces; choose a nearly shared height (difference<=0.04m) and a lateral separation>=0.001m. The check only validates waypoint topology and cannot prove clearance, retention or placement. Align at the exterior entrance while preserving close; move laterally to interior at the supplied carry height; release; return to the SAME exterior entrance while open; observe. No upward retreat inside the cavity, no automatic chase/push/retry, and no hidden surface/object position. Optional bounded relative rotation applies only during exterior alignment. Original public position/orientation guards stop remaining actions before release if a waypoint is unreached; native firsthit remains immediate. Default132actions; phase_steps.align/insert/release/exit are integer1..80, all are pre-counted against remaining400actions. Do not assume early termination refunds an overbudget proposal. Anchors expire at plan end. Observe does not add a planning call; only the remaining original3 revisions may interpret new images. Retention and placement remain unverified action attempts. Keep bound_place for open-top or unroofed visible supports."
+    },
+    {
+      "id": "bound_transfer",
+      "arguments": [
+        "source_camera",
+        "source_pixel",
+        "support_camera",
+        "support_pixel",
+        "contact_offset",
+        "place_offset"
+      ],
+      "optional_arguments": [
+        "source_approach_offset",
+        "support_approach_offset",
+        "lift_delta",
+        "retreat_delta",
+        "rotation",
+        "carry_rotation",
+        "phase_steps"
+      ],
+      "phase_steps_defaults": {
+        "open": 12,
+        "approach": 40,
+        "descend": 40,
+        "close": 12,
+        "lift": 20,
+        "carry": 40,
+        "lower": 40,
+        "release": 12,
+        "retreat": 20
+      },
+      "method": "Bind source and a visibly stationary support point from THIS public RGB-D snapshot before any action. Open; approach source; descend to contact_offset from source; close; lift from current public EEF by lift_delta; carry to support+support_approach_offset; lower to support+place_offset; release; retreat from current EEF; observe. Source/support approach_offset defaults[0,0,0.12], lift_delta/retreat_delta defaults[0,0,0.06]. rotation applies only during source approach, carry_rotation only during carry; both defaultzero. The source point is never reused after lift and is not a tracked object pose. Use only when current visible geometry supports this finite transfer attempt; close/lift/carry do not establish retention. Record result unverified and inspect later when a planning call remains. Default maximum236actions; two default transfers require472 and cannot fit400. Allocate explicit smaller phase caps if needed; do not assume early convergence will refund a plan that exceeds the current budget. Waypoint residual>4cm skips the remaining recipe; pure approach/carry navigation may also replan on public stall. Neither guard proves contact or placement. Every phase_steps value is an integer1..80 (not Boolean); omitted phase keys keep their defaults, unknown keys are rejected. The complete planned sum must fit remaining_steps within the unchanged400-action recovery budget. All offsets/deltas/stroke vectors are world-aligned relative meters, each component within+/-0.15; relative rotation components within+/-0.5 radians. No absolute coordinates. Targets expire at this plan end. observe consumes no action but only a subsequent available planning call can interpret its new image; it does not create another call. Set the approach cap with arguments.phase_steps.approach; this recipe does not accept approach_steps, even if phase_steps is also supplied. Set the support approach cap with arguments.phase_steps.carry."
+    },
+    {
+      "id": "bound_drawer_pull",
+      "arguments": [
+        "camera",
+        "pixel",
+        "approach_offset",
+        "contact_offset",
+        "stroke"
+      ],
+      "optional_arguments": [
+        "rotation",
+        "stroke_rotation",
+        "retreat_delta",
+        "phase_steps"
+      ],
+      "phase_steps_defaults": {
+        "open": 12,
+        "approach": 40,
+        "contact": 40,
+        "close": 12,
+        "stroke": 40,
+        "release": 12,
+        "retreat": 20
+      },
+      "method": "Select a currently visible handle and infer a bounded pull direction from public views/calibration. Bind it before opening; approach to the explicitly supplied approach_offset; move to contact_offset; close; execute stroke relative to the EEF reached there while preserving close; release; retreat (default[0,0,0.06]); observe. Optional rotation is applied during approach, stroke_rotation during the relative pull (defaultszero). Default maximum176actions. Approach/contact gross waypoint failure stops before further interaction. Only approach may use the public stall check; the pull retains its full requested duration. This is an attempted handle pull, not confirmation of grasp/opening; do not infer door travel, hinge axis, joint limits or completion from private state. The handle point is not reused after pulling. Every phase_steps value is an integer1..80 (not Boolean); omitted phase keys keep their defaults, unknown keys are rejected. The complete planned sum must fit remaining_steps within the unchanged400-action recovery budget. All offsets/deltas/stroke vectors are world-aligned relative meters, each component within+/-0.15; relative rotation components within+/-0.5 radians. No absolute coordinates. Targets expire at this plan end. observe consumes no action but only a subsequent available planning call can interpret its new image; it does not create another call. Set the approach cap with arguments.phase_steps.approach; this recipe does not accept approach_steps, even if phase_steps is also supplied."
+    },
+    {
+      "id": "bound_surface_stroke",
+      "arguments": [
+        "camera",
+        "pixel",
+        "approach_offset",
+        "contact_offset",
+        "stroke"
+      ],
+      "optional_arguments": [
+        "gripper",
+        "rotation",
+        "stroke_rotation",
+        "retreat_delta",
+        "phase_steps"
+      ],
+      "phase_steps_defaults": {
+        "prepare": 12,
+        "approach": 40,
+        "contact": 40,
+        "stroke": 40,
+        "retreat": 20
+      },
+      "method": "Select a visible surface/contact point and a bounded relative stroke supported by the current view (press, push, or a local door-closing attempt). Bind before gripper preparation. Keep gripper (default+1) during approach, contact, stroke and retreat; approach_offset/contact_offset must be supplied. rotation applies during approach; stroke_rotation during stroke; both defaultzero. Retreat defaults[0,0,0.06]. Default maximum152actions. Waypoint gross failure stops before the stroke. Only approach may use the public stall check; deliberate contact/stroke is never shortened by that check. No hinge trajectory, contact flag or success predicate is inferred; a curved door may need a fresh view and another bounded local stroke, not replaying this old anchor. The result remains an unverified action attempt. Every phase_steps value is an integer1..80 (not Boolean); omitted phase keys keep their defaults, unknown keys are rejected. The complete planned sum must fit remaining_steps within the unchanged400-action recovery budget. All offsets/deltas/stroke vectors are world-aligned relative meters, each component within+/-0.15; relative rotation components within+/-0.5 radians. No absolute coordinates. Targets expire at this plan end. observe consumes no action but only a subsequent available planning call can interpret its new image; it does not create another call. Set the approach cap with arguments.phase_steps.approach; this recipe does not accept approach_steps, even if phase_steps is also supplied."
+    },
+    {
+      "id": "inspect",
+      "arguments": [],
+      "method": "Observe current cameras before selecting any geometric action."
+    },
+    {
+      "id": "grasp_observed_target",
+      "arguments": [
+        "camera",
+        "pixel",
+        "contact_offset"
+      ],
+      "method": "Move to one visually selected depth point with a contact offset, close once, lift by a relative 0.06 m, inspect. Use only when the gripper is already visibly open and the direct approach is clear. Do not reuse the pixel after moving."
+    },
+    {
+      "id": "place_held_object",
+      "arguments": [
+        "camera",
+        "pixel",
+        "offset"
+      ],
+      "method": "Move toward a visually selected support with an offset appropriate to the observed held object, open, retreat upward by relative 0.06 m, inspect. Do not assume an object is held from a closed gripper alone."
+    },
+    {
+      "id": "relative_clearance",
+      "arguments": [
+        "delta",
+        "rotation",
+        "steps",
+        "gripper"
+      ],
+      "method": "Bounded relative motion to a visibly clear location followed by inspection. Never derive direction from hidden obstacle geometry."
+    },
+    {
+      "id": "policy_continuation",
+      "arguments": [
+        "steps"
+      ],
+      "method": "Run a bounded continuation of the configured policy, then inspect."
+    }
+  ]
+}

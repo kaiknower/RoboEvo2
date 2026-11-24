@@ -1,0 +1,85 @@
+{
+  "protocol": "libero_pro_public_harness_v1",
+  "mode": "fresh_repaired_full_cohort",
+  "runtime_python": "/absolute/path/to/libero-runtime-python",
+  "output_root": "./outputs",
+  "gpu_ids": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "baseline_path": "/absolute/path/to/sft-v8",
+  "ppo_root": "/absolute/path/to/conditional-ppo",
+  "init_ids": [
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+  ],
+  "task_ids": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "seed": 42,
+  "cameras": [
+    "agentview",
+    "robot0_eye_in_hand",
+    "sideview"
+  ],
+  "policy_caps": {
+    "spatial": 220,
+    "object": 280,
+    "goal": 300,
+    "long": 520
+  },
+  "recovery_steps": 400,
+  "repair_rounds": 3,
+  "case_wall_seconds": 1800,
+  "coding_max_concurrent": 8,
+  "save_video": false,
+  "video_fps": 20,
+  "checkpoint_groups": [
+    "sft_v8",
+    "ppo"
+  ],
+  "coding_agent": {
+    "enabled": true,
+    "model": "your-model-name",
+    "timeout_seconds": 600,
+    "admission_root": "/absolute/path/to/output/coding_admission",
+    "provider_max_inflight": 8,
+    "max_inflight": 8,
+    "admission_wait_timeout_seconds": 7200
+  },
+  "idle_service_pids": [],
+  "minimum_free_memory_mib": 24000,
+  "adaptive_capacity": {
+    "worker_peak_memory_mib": 8704,
+    "startup_host_memory_mib": 22528,
+    "steady_host_memory_mib": 6144,
+    "max_concurrent_starts": 8,
+    "poll_seconds": 2
+  },
+  "sensor_time_calibration": true,
+  "policy_tail_after_harness": false,
+  "harness_version": "full_campaign"
+}

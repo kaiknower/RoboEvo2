@@ -1,0 +1,206 @@
+{
+  "schema_version": 1,
+  "method": "PPO + Flow-SDE, initialized from pi05 v8",
+  "baseline": "YOUR_HF_ORG/libero-pro",
+  "splits": {
+    "train": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "validation": [
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29
+    ],
+    "test": [
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19
+    ]
+  },
+  "runs": [
+    {
+      "suite": "spatial",
+      "axis": "position",
+      "condition": "spatial_position",
+      "benchmark": "libero_spatial_swap",
+      "tasks": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "action_step_cap": 220,
+      "output": "runs/spatial_position"
+    },
+    {
+      "suite": "spatial",
+      "axis": "task",
+      "condition": "spatial_task",
+      "benchmark": "libero_spatial_task",
+      "tasks": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "action_step_cap": 220,
+      "output": "runs/spatial_task"
+    },
+    {
+      "suite": "object",
+      "axis": "position",
+      "condition": "object_position",
+      "benchmark": "libero_object_swap",
+      "tasks": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "action_step_cap": 280,
+      "output": "runs/object_position"
+    },
+    {
+      "suite": "object",
+      "axis": "task",
+      "condition": "object_task",
+      "benchmark": "libero_object_task",
+      "tasks": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "action_step_cap": 280,
+      "output": "runs/object_task"
+    },
+    {
+      "suite": "goal",
+      "axis": "position",
+      "condition": "goal_position",
+      "benchmark": "libero_goal_swap",
+      "tasks": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "action_step_cap": 300,
+      "output": "runs/goal_position"
+    },
+    {
+      "suite": "goal",
+      "axis": "task",
+      "condition": "goal_task",
+      "benchmark": "libero_goal_task",
+      "tasks": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "action_step_cap": 300,
+      "output": "runs/goal_task"
+    },
+    {
+      "suite": "long",
+      "axis": "position",
+      "condition": "long_position",
+      "benchmark": "libero_10_swap",
+      "tasks": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "action_step_cap": 520,
+      "output": "runs/long_position"
+    },
+    {
+      "suite": "long",
+      "axis": "task",
+      "condition": "long_task",
+      "benchmark": "libero_10_task",
+      "tasks": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "action_step_cap": 520,
+      "output": "runs/long_task"
+    }
+  ],
+  "status": "plan_only_not_trained"
+}
