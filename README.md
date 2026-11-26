@@ -11,7 +11,8 @@
 <p align="center">
   <a href="https://arxiv.org/abs/2611.34675"><img src="https://img.shields.io/badge/arXiv-2611.34675-b31b1b?logo=arxiv&logoColor=white" alt="arXiv 2611.34675"></a>
   <a href="https://kaiknower.github.io/RoboEvo2/"><img src="https://img.shields.io/badge/project-page-2e6db5" alt="Project page"></a>
-  <a href="https://huggingface.co/Liukaikai/RoboEvo2"><img src="https://img.shields.io/badge/%F0%9F%A4%97-model-ffcc4d" alt="Hugging Face model"></a>
+  <a href="https://huggingface.co/Liukaikai/RoboEvo2"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20HF-Weights-ffcc4d" alt="HF Weights"></a>
+  <a href="https://huggingface.co/papers/2611.34675"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20HF-Paper-ffcc4d" alt="HF Paper"></a>
 </p>
 
 <p align="center">
