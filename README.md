@@ -9,6 +9,12 @@
 </p>
 
 <p align="center">
+  <a href="https://arxiv.org/abs/2611.34675"><img src="https://img.shields.io/badge/arXiv-2611.34675-b31b1b?logo=arxiv&logoColor=white" alt="arXiv 2611.34675"></a>
+  <a href="https://kaiknower.github.io/RoboEvo2/"><img src="https://img.shields.io/badge/project-page-2e6db5" alt="Project page"></a>
+  <a href="https://huggingface.co/Liukaikai/RoboEvo2"><img src="https://img.shields.io/badge/%F0%9F%A4%97-model-ffcc4d" alt="Hugging Face model"></a>
+</p>
+
+<p align="center">
   <img src="https://img.shields.io/badge/python-%E2%89%A5%203.11-3776AB?logo=python&logoColor=white" alt="Python 3.11 or later">
   <img src="https://img.shields.io/badge/policy-%CF%80%E2%82%80.%E2%82%85%20%C2%B7%20FastWAM-6f4bb0" alt="Policies: pi0.5 and FastWAM">
   <img src="https://img.shields.io/badge/benchmarks-LIBERO--PRO%20%C2%B7%20RoboTwin%20%C2%B7%20MolmoSpaces-2e6db5" alt="Benchmarks: LIBERO-PRO, RoboTwin, MolmoSpaces">
@@ -107,6 +113,8 @@ The [Hybrid evaluator](hybrid/README.md) covers eight LIBERO-PRO conditions, ten
 
 `YOUR_ORG/libero-pro` (companion runtime) and `YOUR_HF_ORG/libero-pro` (v8 checkpoint) are placeholders until those are released.
 
+The co-evolved and PPO policies are on [Hugging Face](https://huggingface.co/Liukaikai/RoboEvo2); set `ppo_root` to its `ppo/` folder.
+
 Native evaluation uses the companion LIBERO-PRO checkout with its patched LIBERO, RLinf and OpenPI packages, OpenGL/EGL runtime, assets and checkpoints. Follow the [pinned runtime installation](training/conditional_ppo/README.md#runtime-setup) and activate its Python environment. For the Hybrid evaluator, start in its directory, configure the local paths and [connect your model](#connect-your-model).
 
 ```sh
@@ -143,17 +151,10 @@ RoboEvo2/
 If you find RoboEvo² useful in your research, please cite our paper:
 
 ```bibtex
-@inproceedings{roboevo2,
-  title         = {RoboEvo$^2$: Recursive Robot Self-Improvement via Harness--Policy Co-Evolution},
-  author        = {TBD},
-  booktitle     = {TBD},
-  year          = {TBD},
-  eprint        = {TBD},
-  archivePrefix = {arXiv},
-  primaryClass  = {cs.RO},
-  url           = {TBD}
+@article{liu2026roboevo2,
+  title   = {RoboEvo$^2$: Recursive Robot Self-Improvement via Harness--Policy Co-Evolution},
+  author  = {Liu, Chenzhi and Lin, Jiehong and Huang, Wei and Huang, Xuzhao and Li, Haoyuan and Zhang, Yang and Huang, Junchao and Cai, Chenyeyang and Wang, Bo and Kosuge, Kazuhiro and Wang, Zhongrui and Qi, Xiaojuan},
+  journal = {arXiv preprint arXiv:2611.34675},
+  year    = {2026}
 }
 ```
-
-> [!NOTE]
-> The paper is under review. Authors, venue, year and the arXiv link will be filled in once it is public.
