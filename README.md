@@ -55,6 +55,7 @@ Each round moves experience in both directions:
 
 | I want to… | Entry point |
 | --- | --- |
+| 📦 Download the released policy weights | [Liukaikai/RoboEvo2 on Hugging Face](https://huggingface.co/Liukaikai/RoboEvo2) |
 | 🚀 Start a new evolution run | [Round-zero skills and empty memory](evolution/initial/README.md) · [Round runner and example config](evolution/README.md) |
 | 🧪 Evaluate a policy by itself or with recovery | [LIBERO-PRO Hybrid evaluation](hybrid/README.md) |
 | 🎯 Train or inspect a policy update | [Round-specific supervised, CPD and EWC update](evolution/README.md#policy-update) · [LIBERO-PRO training recipes](training/libero_v8/README.md) |
